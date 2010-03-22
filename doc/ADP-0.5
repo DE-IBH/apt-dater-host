@@ -1,8 +1,11 @@
-apt-dater-host
-==============
+apt-dater protocol 0.6
+======================
 
-This directory contains the client perl scripts providing a generic
-package management interface for several GNU/Linux distributions.
+This file documents the protocol between apt-dater and the apt-dater-host
+command called via ssh on remote hosts. The protocol is designed to be a
+generic package management interface and cover most common GNU/Linux based
+package manager philosophies.
+
 
 Hosts managed by apt-dater musst have the apt-dater-host command in
 the search path.
@@ -10,13 +13,21 @@ the search path.
 User interactive commands (see below) will be shown to the user
 unfiltered. Non-user interactive commands are parse by apt-dater.
 
-Non-user interactive sessions should start with the protocol version:
+Non-user interactive sessions must start with the protocol version:
 
     ADPROTO: ${ProtoVersion}
 
-The current protocol version is 0.2. Example:
+The current protocol version is 0.5. Example:
 
-    ADPROTO: 0.2
+    ADPROTO: 0.5
+
+If apt-dater-host detects an error (i.e. from the package manager)
+during a non-interactive command it must add an error line containing
+an user readable error message:
+
+    ADPERR: ${Message}
+
+The message string should not be empty.
 
 
 Calling syntax
@@ -74,6 +85,16 @@ installed. Detected virtualizations:
     VIRT: Unknown
 
 
+There sould be an UNAME line of the format:
+
+    UNAME: ${KERNEL-NAME}|${MACHINE}
+
+The values are taken from the uname command:
+
+    KERNEL-NAME: uname -s
+    MACHINE    : uname -m
+
+
 There might be a FORBID line of the format:
 
     FORBID: ${Operations}
@@ -92,6 +113,17 @@ The apt-dater-host executable on the client will refused
 operations marked as forbidden.
 
 
+There should be an UUID line:
+
+UUID: {$UUID}
+
+This is the DCE 1.1, ISO/IEC 11578:1996 and RFC 4122
+compliant Universally Unique Identifier (UUID) of the host.
+It should be a DCE version 1 (time and node based) UUID,
+generated at the installation time of the apt-dater-host
+client.
+
+
 For each installed package there must be a status line:
 
     STATUS: ${Package}|${InstVersion}|${Status}...
@@ -102,6 +134,8 @@ For each installed package there must be a status line:
 	u=${NewVersion}	: update available
 	x		: extra (no version found in any repository, this
 			  might be an obsoleted package)
+	b=${AddInfo}	: package is installed but broken
+			  (i.e. not configured)
 
 Example for an installed package:
 
@@ -153,9 +187,10 @@ Example
 The following lines show an example output of the 'status' command for a
 Debian Etch installation (the 'STATUS:' lines are truncated):
 
-ADPROTO: 0.2
+ADPROTO: 0.3
 LSBREL: Debian|4.0|etch
 VIRT: Physical
+UNAME: Linux|i686
 STATUS: groff-base|1.18.1.1-12|i
 STATUS: libgnome2-0|2.16.0-2|i
 STATUS: m4|1.4.8-2|i

@@ -1,8 +1,11 @@
-apt-dater-host
-==============
+apt-dater protocol 0.6
+======================
 
-This directory contains the client perl scripts providing a generic
-package management interface for several GNU/Linux distributions.
+This file documents the protocol between apt-dater and the apt-dater-host
+command called via ssh on remote hosts. The protocol is designed to be a
+generic package management interface and cover most common GNU/Linux based
+package manager philosophies.
+
 
 Hosts managed by apt-dater musst have the apt-dater-host command in
 the search path.
@@ -10,13 +13,21 @@ the search path.
 User interactive commands (see below) will be shown to the user
 unfiltered. Non-user interactive commands are parse by apt-dater.
 
-Non-user interactive sessions should start with the protocol version:
+Non-user interactive sessions must start with the protocol version:
 
     ADPROTO: ${ProtoVersion}
 
-The current protocol version is 0.4. Example:
+The current protocol version is 0.6. Example:
 
-    ADPROTO: 0.4
+    ADPROTO: 0.6
+
+If apt-dater-host detects an error (i.e. from the package manager)
+during a non-interactive command it must add an error line containing
+an user readable error message:
+
+    ADPERR: ${Message}
+
+The message string should not be empty.
 
 
 Calling syntax
@@ -46,6 +57,32 @@ There should be an LSB release line of the format:
 Example for Debian Etch:
 
     LSBREL: Debian|4.0|etch
+
+
+There sould be PRL (Package Resource List) lines for the archive sources
+the packaging system is using:
+
+    PRL: ${URI}
+
+The PRL lines must be in a normalized form (no unnecessary spaces). There
+must be a PRL line for each archive source or no PRL lines at all.
+
+Example for Debian Squeezy:
+
+    PRL: http://ftp.de.debian.org/debian/ squeezy main
+    PRL: http://security.debian.org/ squeeze/updates main
+    PRL: deb http://www.debian-multimedia.org squeeze main
+
+
+A host might be part of a cluster (heartbeat, drbd, ...). Cluster nodes
+should not be updated simultanously. apt-dater will detect cluster nodes
+by identical CLUSTER lines and avoid updating nodes of the same cluster
+simultanously:
+
+    CLUSTER: ${Clustername}
+
+The cluster might be any ASCII string and must be identical on all
+cluster nodes.
 
 
 There sould be an VIRTualization line of the format:

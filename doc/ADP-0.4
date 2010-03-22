@@ -1,8 +1,11 @@
-apt-dater-host
-==============
+apt-dater protocol 0.6
+======================
 
-This directory contains the client perl scripts providing a generic
-package management interface for several GNU/Linux distributions.
+This file documents the protocol between apt-dater and the apt-dater-host
+command called via ssh on remote hosts. The protocol is designed to be a
+generic package management interface and cover most common GNU/Linux based
+package manager philosophies.
+
 
 Hosts managed by apt-dater musst have the apt-dater-host command in
 the search path.
@@ -10,21 +13,13 @@ the search path.
 User interactive commands (see below) will be shown to the user
 unfiltered. Non-user interactive commands are parse by apt-dater.
 
-Non-user interactive sessions must start with the protocol version:
+Non-user interactive sessions should start with the protocol version:
 
     ADPROTO: ${ProtoVersion}
 
-The current protocol version is 0.5. Example:
+The current protocol version is 0.4. Example:
 
-    ADPROTO: 0.5
-
-If apt-dater-host detects an error (i.e. from the package manager)
-during a non-interactive command it must add an error line containing
-an user readable error message:
-
-    ADPERR: ${Message}
-
-The message string should not be empty.
+    ADPROTO: 0.4
 
 
 Calling syntax

@@ -1,0 +1,8 @@
+apt-dater-host (0.9.0-adp0.6) unstable; urgency=low
+
+  * apt-dater-host split-off
+  * ADP 0.6:
+     - cluster support
+     - archive source support
+
+ -- Thomas Liske <liske@ibh.de>  Mon, 22 Mar 2010 19:58:59 +0100
