@@ -191,8 +191,8 @@ sub do_status() {
 	$DPKGARGS = "--quiet --simulate --fix-broken --allow-unauthenticated";
     }
 
-    unless(open(HAPT, "$_GETROOT $DPKGTOOL $DPKGARGS upgrade |")) {
-	print "\nADPERR: Failed to execute '$_GETROOT $DPKGTOOL $DPKGARGS upgrade' ($!).\n";
+    unless(open(HAPT, "$_GETROOT $DPKGTOOL $DPKGARGS dist-upgrade |")) {
+	print "\nADPERR: Failed to execute '$_GETROOT $DPKGTOOL $DPKGARGS dist-upgrade' ($!).\n";
 	exit(1);
     }
     while(<HAPT>) {
@@ -224,7 +224,7 @@ sub do_status() {
     }
     close(HAPT);
     if($?) {
-	print "\nADPERR: Error executing '$GETROOT $DPKGTOOL $DPKGARGS upgrade' ($?).\n";
+	print "\nADPERR: Error executing '$GETROOT $DPKGTOOL $DPKGARGS dist-upgrade' ($?).\n";
 	exit(1);
     }
 
