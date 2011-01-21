@@ -34,6 +34,7 @@ use strict;
 
 my $CFGFILE = '/etc/apt-dater-host.conf';
 my $DPKGTOOL = 'aptitude';
+my $APTUPGRADE = 'dist-upgrade';
 my $ASSUMEYES = 0;
 my $GETROOT = 'sudo';
 my $CLEANUP = 0;
@@ -292,9 +293,9 @@ sub do_upgrade() {
     $UpgradeCmd .= '--assume-yes ' if($ASSUMEYES);
 
     if($DPKGTOOL eq 'aptitude'){
-	$UpgradeCmd .= '-o Aptitude::Delete-Unused=false safe-';
+	$UpgradeCmd .= '-o Aptitude::Delete-Unused=false ';
     }
-    $UpgradeCmd .= 'upgrade';
+    $UpgradeCmd .= $APTUPGRADE;
 
     system($UpgradeCmd);
 }
