@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 # apt-dater - terminal-based remote package update manager
 #
@@ -29,6 +29,7 @@ use AptPkg::Config '$_config';
 use AptPkg::System '$_system';
 use AptPkg::Cache;
 use strict;
+use warnings;
 
 my $CFGFILE = '/etc/apt-dater-host.conf';
 my $DPKGTOOL = 'aptitude';
@@ -42,12 +43,20 @@ my $FORBID_INSTALL = 0;
 my $UUIDFILE = '/etc/apt-dater-host.uuid';
 my @CLUSTERS;
 
-eval `cat "$CFGFILE"` if (-r $CFGFILE);
-
 my $CMD = shift;
 my $ADPROTO = '0.6';
 
 $ENV{'LC_ALL'} = 'C';
+
+if (-r $CFGFILE) {
+    eval `cat "$CFGFILE"` ;
+
+    if($@ ne '') {
+	print "ADPROTO: $ADPROTO\n";
+	print "ADPERR: Invalid config $CFGFILE: $@\n";
+	exit;
+    }
+}
 
 $GETROOT = '' if($> == 0);
 
