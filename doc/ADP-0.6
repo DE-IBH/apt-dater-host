@@ -74,15 +74,16 @@ Example for Debian Squeezy:
     PRL: deb http://www.debian-multimedia.org squeeze main
 
 
-A host might be part of a cluster (heartbeat, drbd, ...). Cluster nodes
-should not be updated simultanously. apt-dater will detect cluster nodes
-by identical CLUSTER lines and avoid updating nodes of the same cluster
+A host might be part of one or more cluster (heartbeat, drbd, ...). Cluster
+nodes should not be updated simultanously. apt-dater will detect cluster
+nodes by identical CLUSTER lines and avoid updating nodes of the same cluster
 simultanously:
 
-    CLUSTER: ${Clustername}
+    CLUSTER: ${Cluster-A}
+    CLUSTER: ${Cluster-B}
 
 The cluster might be any ASCII string and must be identical on all
-cluster nodes.
+cluster nodes. A node can be part of multiple clusters.
 
 
 There sould be an VIRTualization line of the format:
