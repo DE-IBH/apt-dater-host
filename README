@@ -1,0 +1,22 @@
+README for apt-dater-host
+=========================
+
+Setup hosts managed by apt-dater:
+
+  You need a SSH server and sudo installed. Create a user which will
+  be used to install updates (using root is NOT recommended).
+  Modify the /etc/sudoers:
+
+	Defaults env_reset,env_keep=MAINTAINER
+	the-user ALL=NOPASSWD: /usr/bin/apt-get, /usr/bin/aptitude 
+
+At your management server:
+
+  Create a user on your management server which perform updates on your
+  hosts.
+
+  Generate a SSH keypair:
+    ssh-keygen [..]
+
+  Distribute the public key(s) e.g.:
+    ssh-copy-id -i ~/.ssh/your-public-key managed-host
