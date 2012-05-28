@@ -1,4 +1,4 @@
-SUBDIRS = man
+#SUBDIRS = man
 
 EXTRA_DIST=debian-pkg
 
