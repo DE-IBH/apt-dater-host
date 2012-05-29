@@ -13,3 +13,7 @@ install:
 	
 	mkdir -p $(DESTDIR)/etc/apt/apt.conf.d
 	cp scripts/99apt-dater-host_periodic $(DESTDIR)/etc/apt/apt.conf.d
+
+	mkdir -p $(DESTDIR)/etc/sudoers.d
+	cp scripts/apt-dater-host $(DESTDIR)/etc/sudoers.d/
+	chown 0440 $(DESTDIR)/etc/sudoers.d/apt-dater-host

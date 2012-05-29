@@ -1,0 +1,11 @@
+# apt-dater-host sudoers.d config file
+# ------------------------------------
+#
+# Please consider a look at /etc/sudoers.d/README howto enable this file.
+#
+
+# Keep apt-dater's MAINTAINER environment variable
+#Defaults	env_keep += MAINTAINER
+
+# Allow members of group adm to execute the apt-get command
+#%adm		ALL=NOPASSWD: /usr/bin/apt-get
