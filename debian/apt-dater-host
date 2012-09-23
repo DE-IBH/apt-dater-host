@@ -338,19 +338,21 @@ sub do_kernel() {
 	return;
     }
 
+    my $vers = '';
     if (-r $versignfile) {
       unless(`cat $versignfile` =~ /^Ubuntu (\S+)-\S+ \S+$/) {
           print "$infostr 2 $version\n";
           return;
       }
+      $vers = $1;
     }
     else {
       unless(`cat $verfile` =~ /^\S+ \S+ \S+ \(Debian ([^\)]+)\)/) {
           print "$infostr 2 $version\n";
           return;
       }
+      $vers = $1;
     }
-    my $vers = $1;
 
     my $reboot = 0;
     unless(open(HDPKG, "dpkg-query -W -f='\${Version} \${Status;20} \${Maintainer} \${Provides}\n' 'linux-image*'|grep -E 'install ok installed (Debian|Ubuntu) Kernel Team'|grep linux-image|")) {
