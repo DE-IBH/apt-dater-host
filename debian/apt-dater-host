@@ -345,7 +345,9 @@ sub do_kernel() {
       $vers = $1;
     }
     else {
-      unless(`cat $verfile` =~ /^\S+ \S+ \S+ \(Debian ([^\)]+)\)/) {
+      my $vstr = `cat $verfile`;
+      unless($vstr =~ /^\S+ \S+ \S+ \(Debian ([^\)]+)\)/ ||
+             $vstr =~ /^\S+ \S+ \S+ \(debian-kernel\@lists\.debian\.org\) .+ Debian (\S+)$/) {
           print "$infostr 2 $version\n";
           return;
       }
