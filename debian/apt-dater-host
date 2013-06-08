@@ -59,6 +59,11 @@ if (-r $CFGFILE) {
     }
 }
 
+if ($DPKGTOOL ne "apt-get" and ! -x `which $DPKGTOOL` ) {
+    # unavailable DPKG frontend - fallback to apt-get
+    $DPKGTOOL = "apt-get";
+}
+
 $GETROOT = '' if($> == 0);
 
 die "Don't call this script directly!\n" unless (defined($CMD));
