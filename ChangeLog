@@ -2,6 +2,8 @@ apt-dater-host (0.9.1-adp0.6) unstable; urgency=low
 
   * Detect new Debian distro kernels correctly.
     (Closes Debian Bug#697330 by Time Weingärtner)
+  * Debian: apt-dater-host should use apt-get as default.
+    (Contributed by Simon Deziel)
 
  -- Thomas Liske <liske@ibh.de>  
 

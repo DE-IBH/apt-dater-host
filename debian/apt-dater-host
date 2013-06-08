@@ -33,7 +33,7 @@ use strict;
 use warnings;
 
 my $CFGFILE = '/etc/apt-dater-host.conf';
-my $DPKGTOOL = 'aptitude';
+my $DPKGTOOL = 'apt-get';
 my $APTUPGRADE = 'dist-upgrade';
 my $ASSUMEYES = 0;
 my $GETROOT = 'sudo';
