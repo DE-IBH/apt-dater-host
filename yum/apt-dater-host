@@ -101,6 +101,31 @@ else {
     die "Internal error!\n";
 }
 
+sub call_yum {
+    my $nofatal = ($_[0] && $_[0] eq "nofatal" && shift @_);
+    open (my $fh, "-|", @_) or do {
+        return if $nofatal;
+        print "\nADPERR: Failed to execute '@_' ($!).\n";
+        exit(1);
+    };
+
+    my $out = do {
+        local $/; # slurp
+        <$fh>;
+    };
+
+    close $fh;
+    if($?) {
+        return if $nofatal;
+        print "\nADPERR: Error executing '@_' ($?).\n";
+        exit(1);
+    }
+
+
+    $out =~ s/\n+(\s+)/$1/g;
+    return split(/\n+/, $out);
+}
+
 sub get_virt() {
     return "Unknown" unless (-x '/usr/bin/imvirt');
 
@@ -164,43 +189,20 @@ sub do_status() {
 
     # get packages which might be upgraded
     my %updates;
-    unless(open(HAPT, "$GETROOT yum list updates |")) {
-	print "\nADPERR: Failed to execute '$GETROOT yum list updates' ($!).\n";
-	exit(1);
-    };
-    while(<HAPT>) {
-	chomp;
-
+    foreach(call_yum("$GETROOT yum list updates")) {
 	$updates{$1} = $2 if (/^(\S+)\s+(\d\S*)\s+(\S+)/);
     }
-    close(HAPT);
 
     # get packages which are obsolete (extra - no downloadable version available)
     my %extras;
-    unless(open(HYUM, "$GETROOT yum list extras |")) {
-	print "\nADPERR: Failed to execute '$GETROOT yum list extras' ($!).\n";
-	exit(1);
-    }
-    while(<HYUM>) {
-	chomp;
-
+    foreach(call_yum("$GETROOT yum list extras")) {
 	$extras{$1} = $2 if (/^(\S+)\s+(\d\S*)\s+(\S+)/);
-    }
-    close(HYUM);
-    if($?) {
-	print "\nADPERR: Error executing '$GETROOT yum list extras' ($?).\n";
-	exit(1);
     }
 
     # get version of installed packages
     my %installed;
     my %status;
-    unless(open(HDPKG, "$GETROOT yum list installed |")) {
-	print "\nADPERR: Failed to execute '$GETROOT yum list installed' ($!).\n";
-	exit(1);
-    }
-    while(<HDPKG>) {
-	chomp;
+    foreach(call_yum("$GETROOT yum list installed")) {
 
 	next unless (/^(\S+)\s+(\d\S*)\s+(\S+)/);
 	$installed{$1} = $2 ;
@@ -214,11 +216,6 @@ sub do_status() {
 	else {
 	    $status{$1} = 'i';
 	}
-    }
-    close(HDPKG);
-    if($?) {
-	print "\nADPERR: Error executing '$GETROOT yum list installed' ($?).\n";
-	exit(1);
     }
 
     foreach my $pkg (keys %installed) {
@@ -256,12 +253,12 @@ sub do_kernel() {
 
     my $kinstalled;
     my %distri;
-    unless(open(HKERNEL, "$GETROOT yum list 'kernel*' |")) {
+    my @ret;
+    if (!(@ret = call_yum('nofatal', "$GETROOT yum list 'kernel*'")) || $?) {
 	print "$infostr 9 $version\n";
 	return;
     };
-    while(<HKERNEL>) {
-	chomp;
+    foreach(@ret) {
 	
 	if(/^Installed Packages/) {
 	    $pos = 1;
@@ -285,11 +282,6 @@ sub do_kernel() {
 	    }
 	}
     }
-    close(HKERNEL);
-    if($?) {
-	print "$infostr 9 $version\n";
-	return;
-    };
 
     unless($distri{$version}) {
 	print "$infostr 2 $version\n";
