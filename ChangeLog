@@ -4,6 +4,9 @@ apt-dater-host (0.9.1-adp0.6) unstable; urgency=low
     (Closes Debian Bug#697330 by Time Weingärtner)
   * Debian: apt-dater-host should use apt-get as default.
     (Contributed by Simon Deziel)
+  * yum: Fix apt-dater-host with newlines in yum.
+    (Closes issue #15 reported by Jonas; fix contributed
+     by Sebastian Schmidt)
 
  -- Thomas Liske <liske@ibh.de>  
 
