@@ -175,6 +175,18 @@ Example for an installed package with an update available:
 There should be a kernel info line (see also 'kernel' command).
 
 
+There might be NEEDRESTART line indicating the presence and the
+version of the needrestart(1) script:
+
+    NEEDRESTART-VER: ${Version}
+
+For each package requiring a restart due outdated library usage
+online there must be one line:
+
+    NEEDRESTART-PKG: ${Package}
+
+
+
 upgrade
 -------
 
