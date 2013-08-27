@@ -1,4 +1,4 @@
-apt-dater-host (0.9.1-adp0.6) unstable; urgency=low
+apt-dater-host (0.9.1-adp0.7) unstable; urgency=low
 
   * Detect new Debian distro kernels correctly.
     (Closes Debian Bug#697330 by Time Weingärtner)
@@ -7,6 +7,7 @@ apt-dater-host (0.9.1-adp0.6) unstable; urgency=low
   * yum: Fix apt-dater-host with newlines in yum.
     (Closes issue #15 reported by Jonas; fix contributed
      by Sebastian Schmidt)
+  * Integrate needrestart(1).
 
  -- Thomas Liske <liske@ibh.de>  
 
