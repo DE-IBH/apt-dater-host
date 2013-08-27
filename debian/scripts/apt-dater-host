@@ -8,4 +8,4 @@
 #Defaults	env_keep += MAINTAINER
 
 # Allow members of group adm to execute the apt-get command
-#%adm		ALL=NOPASSWD: /usr/bin/apt-get
+#%adm		ALL=NOPASSWD: /usr/bin/apt-get,/usr/sbin/needrestart
