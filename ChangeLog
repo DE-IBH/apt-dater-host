@@ -8,6 +8,8 @@ apt-dater-host (0.9.1-adp0.7) unstable; urgency=low
     (Closes issue #15 reported by Jonas; fix contributed
      by Sebastian Schmidt)
   * Integrate needrestart(1).
+  * Disable --assume-yes if any packages are scheduled for removal.
+    (Fixes issue DE-IBH/apt-dater#28)
 
  -- Thomas Liske <liske@ibh.de>  
 
