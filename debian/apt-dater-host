@@ -313,22 +313,24 @@ sub do_upgrade() {
     $UpgradeCmd .= $APTUPGRADE;
 
     # drop -y if any packages would be removed
-    unless(open(HAPT, "$UpgradeCmd --simulate |")) {
-	print "\nADPERR: Failed to execute '$UpgradeCmd --simulate' ($!).\n";
-	exit(1);
-    }
-    while(<HAPT>) {
-	chomp;
-	
-	if(/^The following packages will be REMOVED:/) {
-	    $ASSUMEYES = undef;
-	    last;
+    if($ASSUMEYES) {
+	unless(open(HAPT, "$UpgradeCmd --simulate |")) {
+	    print "\nADPERR: Failed to execute '$UpgradeCmd --simulate' ($!).\n";
+	    exit(1);
 	}
-	last if(/^\d+ upgraded, \d+ newly installed/);
-    }
-    close(HAPT);
+	while(<HAPT>) {
+	    chomp;
+	
+	    if(/^The following packages will be REMOVED:/) {
+		$ASSUMEYES = undef;
+		last;
+	    }
+	    last if(/^\d+ upgraded, \d+ newly installed/);
+	}
+	close(HAPT);
 
-    $UpgradeCmd .= ' --assume-yes' if($ASSUMEYES);
+	$UpgradeCmd .= ' --assume-yes' if($ASSUMEYES);
+    }
 
     system("$GETROOT $UpgradeCmd");
 }
