@@ -351,33 +351,30 @@ sub do_kernel() {
 	return;
     }
 
-    my $vers = '';
     if (-r $versignfile) {
-      unless(`cat $versignfile` =~ /^Ubuntu (\S+)-\S+ \S+$/) {
+      unless(`cat $versignfile` =~ /^Ubuntu \S+-\S+ \S+$/) {
           print "$infostr 2 $version\n";
           return;
       }
-      $vers = $1;
     }
     else {
       my $vstr = `cat $verfile`;
-      unless($vstr =~ /^\S+ \S+ \S+ \(Debian ([^\)]+)\)/ ||
-             $vstr =~ /^\S+ \S+ \S+ \(debian-kernel\@lists\.debian\.org\) .+ Debian (\S+)$/) {
+      unless($vstr =~ /^\S+ \S+ \S+ \(Debian [^\)]+\)/ ||
+             $vstr =~ /^\S+ \S+ \S+ \(debian-kernel\@lists\.debian\.org\) .+ Debian \S+$/) {
           print "$infostr 2 $version\n";
           return;
       }
-      $vers = $1;
     }
 
     my $reboot = 0;
-    unless(open(HDPKG, "dpkg-query -W -f='\${Version} \${Status;20} \${Maintainer} \${Provides}\n' 'linux-image*'|grep -E 'install ok installed (Debian|Ubuntu) Kernel Team'|grep linux-image|")) {
+    unless(open(HDPKG, "ls /boot/vmlinuz-* | sed 's/[^-]*-//;s/[._-]\(pre\|rc\|test\|git\|old\|trunk\)/~\1/g' |")) {
 	print "$infostr 9 $version\n";
 	return;
     }
     while(<HDPKG>) {
 	next unless (/^(\S+)\s/);
 	
-	$reboot=1 unless (system("dpkg", "--compare-versions", $vers, "lt", $1) >> 8);
+	$reboot=1 unless (system("dpkg", "--compare-versions", $version, "lt", $1) >> 8);
     }
     close(HDPKG);
 
