@@ -367,16 +367,16 @@ sub do_kernel() {
     }
 
     my $reboot = 0;
-    unless(open(HDPKG, "ls /boot/vmlinuz-* | sed 's/[^-]*-//;s/[._-]\(pre\|rc\|test\|git\|old\|trunk\)/~\1/g' |")) {
+    unless(open(K_LIST, "ls /boot/vmlinuz-* | sed 's/[^-]*-//;s/[._-]\(pre\|rc\|test\|git\|old\|trunk\)/~\1/g' |")) {
 	print "$infostr 9 $version\n";
 	return;
     }
-    while(<HDPKG>) {
+    while(<K_LIST>) {
 	next unless (/^(\S+)\s/);
 	
 	$reboot=1 unless (system("dpkg", "--compare-versions", $version, "lt", $1) >> 8);
     }
-    close(HDPKG);
+    close(K_LIST);
 
     print "$infostr $reboot $version\n";
 }
