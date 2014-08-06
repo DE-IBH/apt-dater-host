@@ -341,45 +341,25 @@ sub do_install() {
 
 sub do_kernel() {
     my $infostr = 'KERNELINFO:';
-    my $verfile = '/proc/version';
-    my $versignfile = '/proc/version_signature';
     my $version = `uname -r`;
+    my $reboot = 0;
     chomp($version);
 
-    unless(-r $verfile) {
+    unless(`dpkg-query -W -f='\${Maintainer}\n' "linux-image-$version"` =~ /^(Debian|Ubuntu) Kernel Team/) {
+        print "$infostr 2 $version\n";
+        return;
+    }
+
+    unless(open(K_LIST, "ls /boot/vmlinuz-* | sed 's/[^-]*-//;s/[._-]\(pre\|rc\|test\|git\|old\|trunk\)/~\1/g' |")) {
 	print "$infostr 9 $version\n";
 	return;
     }
-
-    my $vers = '';
-    if (-r $versignfile) {
-      unless(`cat $versignfile` =~ /^Ubuntu (\S+)-\S+ \S+$/) {
-          print "$infostr 2 $version\n";
-          return;
-      }
-      $vers = $1;
-    }
-    else {
-      my $vstr = `cat $verfile`;
-      unless($vstr =~ /^\S+ \S+ \S+ \(Debian ([^\)]+)\)/ ||
-             $vstr =~ /^\S+ \S+ \S+ \(debian-kernel\@lists\.debian\.org\) .+ Debian (\S+)$/) {
-          print "$infostr 2 $version\n";
-          return;
-      }
-      $vers = $1;
-    }
-
-    my $reboot = 0;
-    unless(open(HDPKG, "dpkg-query -W -f='\${Version} \${Status;20} \${Maintainer} \${Provides}\n' 'linux-image*'|grep -E 'install ok installed (Debian|Ubuntu) Kernel Team'|grep linux-image|")) {
-	print "$infostr 9 $version\n";
-	return;
-    }
-    while(<HDPKG>) {
+    while(<K_LIST>) {
 	next unless (/^(\S+)\s/);
 	
-	$reboot=1 unless (system("dpkg", "--compare-versions", $vers, "lt", $1) >> 8);
+	$reboot=1 unless (system("dpkg", "--compare-versions", $version, "lt", $1) >> 8);
     }
-    close(HDPKG);
+    close(K_LIST);
 
     print "$infostr $reboot $version\n";
 }
