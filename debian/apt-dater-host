@@ -341,32 +341,15 @@ sub do_install() {
 
 sub do_kernel() {
     my $infostr = 'KERNELINFO:';
-    my $verfile = '/proc/version';
-    my $versignfile = '/proc/version_signature';
     my $version = `uname -r`;
+    my $reboot = 0;
     chomp($version);
 
-    unless(-r $verfile) {
-	print "$infostr 9 $version\n";
-	return;
+    unless(`dpkg-query -W -f='\${Maintainer}\n' "linux-image-$version"` =~ /^(Debian|Ubuntu) Kernel Team/) {
+        print "$infostr 2 $version\n";
+        return;
     }
 
-    if (-r $versignfile) {
-      unless(`cat $versignfile` =~ /^Ubuntu \S+-\S+ \S+$/) {
-          print "$infostr 2 $version\n";
-          return;
-      }
-    }
-    else {
-      my $vstr = `cat $verfile`;
-      unless($vstr =~ /^\S+ \S+ \S+ \(Debian [^\)]+\)/ ||
-             $vstr =~ /^\S+ \S+ \S+ \(debian-kernel\@lists\.debian\.org\) .+ Debian \S+$/) {
-          print "$infostr 2 $version\n";
-          return;
-      }
-    }
-
-    my $reboot = 0;
     unless(open(K_LIST, "ls /boot/vmlinuz-* | sed 's/[^-]*-//;s/[._-]\(pre\|rc\|test\|git\|old\|trunk\)/~\1/g' |")) {
 	print "$infostr 9 $version\n";
 	return;
