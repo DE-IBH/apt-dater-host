@@ -7,7 +7,7 @@
 #   Thomas Liske <liske@ibh.de>
 #
 # Copyright Holder:
-#   2008-2012 (C) IBH IT-Service GmbH [http://www.ibh.de/apt-dater/]
+#   2008-2014 (C) IBH IT-Service GmbH [http://www.ibh.de/apt-dater/]
 #
 # License:
 #   This program is free software; you can redistribute it and/or modify
@@ -47,7 +47,7 @@ my $NEEDRESTART;
 my $RUNNEEDREST;
 
 my $CMD = shift;
-my $ADPROTO = '0.6';
+my $ADPROTO = '0.7';
 
 $ENV{'LC_ALL'} = 'C';
 
@@ -252,30 +252,36 @@ sub do_status() {
     # get version of installed packages
     my %installed;
     my %status;
-    unless(open(HDPKG, "dpkg-query --show --showformat='\${Package} \${Version} \${Status}\\n' |")) {
-	print "\nADPERR: Failed to execute \"dpkg-query --show --showformat='\${Package} \${Version} \${Status}\\n'\" ($!).\n";
+    my $arch = `dpkg --print-architecture`;
+    chomp($arch);
+    unless(open(HDPKG, "dpkg-query --show --showformat='\${Package} \${Version} \${Status} \${Architecture}\\n' |")) {
+	print "\nADPERR: Failed to execute \"dpkg-query --show --showformat='\${Package} \${Version} \${Status} \${Architecture}\\n'\" ($!).\n";
 	exit(1);
     }
+
     while(<HDPKG>) {
 	chomp;
 
-	next unless (/^(\S+) (\S+) (\S+) (\S+) (\S+)$/);
-	$installed{$1} = $2 ;
-		
-	if($holds{$1}) {
-	    $status{$1} = 'h';
+	next unless (/^(\S+) (\S+) (\S+) (\S+) (\S+) (\S+)$/);
+
+	my $pkg = $1;
+	$pkg .= ":$6" if($6 ne q(all) && $6 ne $arch);
+
+	$installed{$pkg} = $2 ;
+	if($holds{$pkg}) {
+	    $status{$pkg} = 'h';
 	}
-	elsif($updates{$1}) {
-	    $status{$1} = 'u';
+	elsif($updates{$pkg}) {
+	    $status{$pkg} = 'u';
 	}
 	else {
-	    $status{$1} = substr($3, 0, 1);
+	    $status{$pkg} = substr($3, 0, 1);
 	    
-	    if ($status{$1} eq 'i') {
+	    if ($status{$pkg} eq 'i') {
 		my $p = $cache->{$1};
 
 		unless ($5 eq 'installed') {
-		    $status{$1} = "b=$5";
+		    $status{$pkg} = "b=$5";
 		}
 		elsif ($p) {
 		    if (my $available = $p->{VersionList}) {
@@ -285,7 +291,7 @@ sub do_status() {
 				$extra = 0 unless ($f->{FileName} eq '/var/lib/dpkg/status');
 			    }
 			}
-			$status{$1} = 'x' if($extra);
+			$status{$pkg} = 'x' if($extra);
 		    }
 		}
 	    }

@@ -1,4 +1,4 @@
-apt-dater-host (0.9.1-adp0.7) unstable; urgency=low
+apt-dater-host (1.0.0-adp0.7) unstable; urgency=low
 
   * Detect new Debian distro kernels correctly.
     (Closes Debian Bug#697330 by Time Weingärtner)
@@ -10,6 +10,11 @@ apt-dater-host (0.9.1-adp0.7) unstable; urgency=low
   * Integrate needrestart(1).
   * Disable --assume-yes if any packages are scheduled for removal.
     (Fixes issue DE-IBH/apt-dater#28)
+  * Debian: detect upgrades of foreign arch packages.
+    (Closes Debian Bug#757329 by Patrick Matthäi <pmatthaei@debian.org>)
+  * Cleanup source tree:
+    - drop automake stuff
+    - rename debian/ to dpkg/
 
  -- Thomas Liske <liske@ibh.de>  
 
