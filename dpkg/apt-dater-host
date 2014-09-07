@@ -47,7 +47,7 @@ my $NEEDRESTART;
 my $RUNNEEDREST;
 
 my $CMD = shift;
-my $ADPROTO = '0.6';
+my $ADPROTO = '0.7';
 
 $ENV{'LC_ALL'} = 'C';
 
