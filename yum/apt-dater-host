@@ -7,7 +7,7 @@
 #   Thomas Liske <liske@ibh.de>
 #
 # Copyright Holder:
-#   2008-2012 (C) IBH IT-Service GmbH [http://www.ibh.de/apt-dater/]
+#   2008-2014 (C) IBH IT-Service GmbH [http://www.ibh.de/apt-dater/]
 #
 # License:
 #   This program is free software; you can redistribute it and/or modify
@@ -35,9 +35,11 @@ my $FORBID_UPGRADE = 0;
 my $FORBID_INSTALL = 0;
 my $UUIDFILE = '/etc/apt-dater-host.uuid';
 my @CLUSTERS;
+my $NEEDRESTART;
+my $RUNNEEDREST;
 
 my $CMD = shift;
-my $ADPROTO = '0.6';
+my $ADPROTO = '0.7';
 
 $ENV{'LC_ALL'} = 'C';
 
@@ -187,6 +189,9 @@ sub do_status() {
 	print "CLUSTER: $CLUSTER\n";
     }
 
+    # add needrestart batch output
+    system(($GETROOT ? $GETROOT : ()), $NEEDRESTART, '-b') if($NEEDRESTART);
+
     # get packages which might be upgraded
     my %updates;
     foreach(call_yum("$GETROOT yum list updates")) {
@@ -335,6 +340,8 @@ sub versioncmp() {
 }
 
 sub do_cleanup() {
+    system(($GETROOT ? $GETROOT : ()), $NEEDRESTART) if($RUNNEEDREST);
+
     return unless $CLEANUP;
 
     system("$GETROOT yum clean packages");
