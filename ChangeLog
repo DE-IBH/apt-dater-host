@@ -7,7 +7,9 @@ apt-dater-host (1.0.0-adp0.7) unstable; urgency=low
   * yum: Fix apt-dater-host with newlines in yum.
     (Closes issue #15 reported by Jonas; fix contributed
      by Sebastian Schmidt)
-  * Integrate needrestart(1).
+  * Integrate needrestart(1): kernel version detection stuff will
+    be removed - needrestart does contain a more advanced approach
+    including kFreeBSD support.
   * Disable --assume-yes if any packages are scheduled for removal.
     (Fixes issue DE-IBH/apt-dater#28)
   * Debian: detect upgrades of foreign arch packages.
