@@ -1,0 +1,280 @@
+#!/usr/local/bin/perl
+
+# apt-dater - terminal-based remote package update manager
+#
+# Authors:
+#   James TD Smith <ahktenzero@mohorovi.cc>
+#   Andre Ellguth <ellguth@ibh.de>
+#   Thomas Liske <liske@ibh.de>
+#
+# Copyright Holder:
+#   2008-2014 (C) IBH IT-Service GmbH [http://www.ibh.de/apt-dater/]
+#
+# License:
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this package; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+#
+
+use BSD::Sysctl 'sysctl';
+use POSIX qw(uname);
+use Data::Dumper;
+
+use strict;
+use warnings;
+
+my $CFGFILE = '/usr/local/etc/apt-dater-host.conf';
+my $PKGTOOL = 'pkg';
+my $ASSUMEYES = 0;
+my $GETROOT = 'sudo';
+my $CLEANUP = 0;
+my $FORBID_REFRESH = 0;
+my $FORBID_UPGRADE = 0;
+my $FORBID_INSTALL = 0;
+my $UUIDFILE = '/usr/local/etc/apt-dater-host.uuid';
+my @CLUSTERS;
+my $NEEDRESTART;
+my $RUNNEEDREST;
+
+my $CMD = shift;
+my $ADPROTO = '0.7';
+
+$ENV{'LC_ALL'} = 'C';
+
+if (-r $CFGFILE) {
+    eval `cat "$CFGFILE"` ;
+
+    if($@ ne '') {
+	print "ADPROTO: $ADPROTO\n";
+	print "ADPERR: Invalid config $CFGFILE: $@\n";
+	exit;
+    }
+}
+
+$GETROOT = '' if($> == 0);
+
+die "Don't call this script directly!\n" unless (defined($CMD));
+if($CMD eq 'sshkey') {
+    die "Sorry, no shell access allowed!\n"
+      unless(defined($ENV{'SSH_ORIGINAL_COMMAND'}));
+
+    @ARGV = split(' ', $ENV{'SSH_ORIGINAL_COMMAND'});
+
+    shift;
+    $CMD = shift;
+}
+die "Invalid command '$CMD'!\n" unless ($CMD=~/^(refresh|status|upgrade|install|kernel)$/);
+
+if ($CMD eq 'refresh') {
+    print "ADPROTO: $ADPROTO\n";
+    if ($FORBID_REFRESH) {
+	print STDERR "\n\n** Sorry, apt-dater based refreshes on this host are disabled! **\n\n"
+    }
+    else {
+	&do_refresh;
+    }
+    &do_status;
+    &do_kernel;
+}
+elsif ($CMD eq 'status') {
+    print "ADPROTO: $ADPROTO\n";
+    &do_status;
+    &do_kernel;
+}
+elsif ($CMD eq 'upgrade') {
+    if ($FORBID_UPGRADE) {
+	print STDERR "\n\n** Sorry, apt-dater based upgrades on this host are disabled! **\n\n";
+    }
+    else {
+	&do_upgrade;
+	&do_cleanup;
+    }
+}
+elsif ($CMD eq 'install') {
+    if ($FORBID_INSTALL) {
+	print STDERR "\n\n** Sorry, apt-dater based installations on this host are disabled! **\n\n";
+    }
+    else {
+	&do_install(@ARGV);
+	&do_cleanup;
+    }
+}
+elsif ($CMD eq 'kernel') {
+    print "ADPROTO: $ADPROTO\n";
+    &do_kernel;
+}
+else {
+    die "Internal error!\n";
+}
+
+
+sub do_refresh() {
+    if(system(($GETROOT ? $GETROOT : ()), $PKGTOOL, 'update')) {
+	print "\nADPERR: Failed to execute '$GETROOT $PKGTOOL update' ($?).\n";
+	exit(1);
+    }
+}
+
+sub get_virt() {
+    # TODO: Detect jails?
+    return "Unknown";
+}
+
+sub get_uname() {
+    my @uname = uname();
+
+    return
+}
+
+sub trim {
+    my $string  = $_[0];
+    $string =~ tr/ //ds if (defined $string);
+    return $string;
+}
+
+sub do_status() {
+    # Fake LSB as we aren't on Linux
+    my @uname = uname();
+
+    print "LSBREL: FreeBSD|$uname[2]|n/a\n";
+
+    # retrieve virtualization informations
+    print "VIRT: ".&get_virt."\n";
+
+    # retrieve uname informations
+    print "UNAME: FreeBSD|" . $uname[4] . "\n";
+
+    # calculate forbid mask
+    my $mask = 0;
+    $mask |= 1 if ($FORBID_REFRESH);
+    $mask |= 2 if ($FORBID_UPGRADE);
+    $mask |= 4 if ($FORBID_INSTALL);
+    print "FORBID: $mask\n";
+
+    # add installation UUID if available
+    if(-r $UUIDFILE && -s $UUIDFILE) {
+	print "UUID: ", `head -n 1 "$UUIDFILE"`;
+    }
+
+    # add cluster name if available
+    foreach my $CLUSTER (@CLUSTERS) {
+	print "CLUSTER: $CLUSTER\n";
+    }
+
+    # add needrestart batch output
+    system(($GETROOT ? $GETROOT : ()), $NEEDRESTART, '-b') if($NEEDRESTART);
+
+    my %pkginfo = ();
+
+    unless(open(PKG, "$PKGTOOL" . ' query -a "%o\\t%n\\t%v\\t%k\\t%R" |')) {
+	print "\nADPERR: Failed to execute $PKGTOOL query -a \%o \%n \%v \%k %R' ($!).\n";
+	exit(1);
+    }
+    while (<PKG>) {
+	chomp;
+	my @pkgLine = split(m/\t/, $_);
+	$pkginfo{trim($pkgLine[0])} = {
+	    name => trim($pkgLine[1]),
+	    installed => trim($pkgLine[2]),
+	    locked => trim($pkgLine[3]),
+	    norepo => trim($pkgLine[4]) eq 'unknown-repository'
+	};
+    }
+    close(PKG);
+
+    # get packages which might be upgraded
+    unless(open(PKG, "$PKGTOOL version -ovRL= |")) {
+	print "\nADPERR: Failed to execute $PKGTOOL version -ovRL= ($!).\n";
+	exit(1);
+    }
+    while (<PKG>) {
+	chomp;
+
+	if ($_ =~ m/([\w\-\_\/]*)\s+[<?]\s+(needs updating \((?:remote|index) has ([^)]+)\)|orphaned:)/) {
+	    my $origin = trim($1);
+	    my $status = trim($2);
+	    my $version = trim($3);
+	    next unless $pkginfo{$origin};
+	    if ($status eq 'orphaned:') {
+		$pkginfo{$origin}->{norepo} = 1;
+	    } else {
+		$pkginfo{$origin}->{upgrade} = $version;
+	    }
+
+	}
+
+    }
+    close(PKG);
+
+    foreach my $origin (keys %pkginfo) {
+	my $instVersion = $pkginfo{$origin}->{installed};
+	my $name = $pkginfo{$origin}->{name};
+	my $status = 'i';
+	if ($pkginfo{$origin}->{norepo}) {
+	    $status = 'x'
+	} elsif ($pkginfo{$origin}->{locked}) {
+	    $status = 'h'
+	} elsif ($pkginfo{$origin}->{upgrade}) {
+	    $status = 'u=' . $pkginfo{$origin}->{upgrade};
+	}
+	print "STATUS: $name|$instVersion|$status\n";
+    }
+}
+
+sub do_upgrade() {
+    my $UpgradeCmd = "$PKGTOOL upgrade";
+
+    # drop -y if any packages would be removed
+    if($ASSUMEYES) {
+	unless(open(HAPT, "$UpgradeCmd -n |")) {
+	    print "\nADPERR: Failed to execute '$UpgradeCmd -n' ($!).\n";
+	    exit(1);
+	}
+	while(<HAPT>) {
+	    chomp;
+
+	    if(/^The following packages will be REMOVED:/) {
+		$ASSUMEYES = undef;
+		last;
+	    }
+	    last if(/^\d+ upgraded, \d+ newly installed/);
+	}
+	close(HAPT);
+
+	$UpgradeCmd .= ' -y' if($ASSUMEYES);
+    }
+
+    system("$GETROOT $UpgradeCmd");
+}
+
+sub do_install() {
+    system(($GETROOT ? $GETROOT : ()), $PKGTOOL, 'install', @_);
+}
+
+sub do_kernel() {
+    my $infostr = 'KERNELINFO:';
+
+    my @versionParts = split(m/ /, sysctl("kern.version"));
+
+    my $version = join(' ', @versionParts[1..3]);
+
+    print "$infostr 0 $version\n";
+}
+
+sub do_cleanup() {
+    system(($GETROOT ? $GETROOT : ()), $NEEDRESTART) if($RUNNEEDREST);
+
+    return unless $CLEANUP;
+
+    system(($GETROOT ? $GETROOT : ()), $PKGTOOL, 'clean', '-y');
+}
