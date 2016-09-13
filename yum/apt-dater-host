@@ -54,7 +54,8 @@ if (-r $CFGFILE) {
 	exit;
     }
     if($ASSUME_YES) {
-	$YES_OPT = "--assumeyes";
+	$YES_OPT = "-y"; # better use -y than --assumeyes since older centos/redhat 
+			 # version do not know about --assumeyes but do now -y
     }
 }
 
