@@ -37,6 +37,8 @@ my $UUIDFILE = '/etc/apt-dater-host.uuid';
 my @CLUSTERS;
 my $NEEDRESTART;
 my $RUNNEEDREST;
+my $YES_OPT = "";
+my $ASSUME_YES;
 
 my $CMD = shift;
 my $ADPROTO = '0.7';
@@ -50,6 +52,9 @@ if (-r $CFGFILE) {
 	print "ADPROTO: $ADPROTO\n";
 	print "ADPERR: Invalid config $CFGFILE: $@\n";
 	exit;
+    }
+    if($ASSUME_YES) {
+	$YES_OPT = "--assumeyes";
     }
 }
 
@@ -234,7 +239,7 @@ sub do_status() {
 }
 
 sub do_upgrade() {
-    system("$GETROOT yum update");
+    system("$GETROOT yum $YES_OPT update");
 }
 
 sub do_install() {
