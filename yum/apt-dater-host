@@ -38,7 +38,7 @@ my @CLUSTERS;
 my $NEEDRESTART;
 my $RUNNEEDREST;
 my $YES_OPT = "";
-my $ASSUME_YES;
+my $ASSUMEYES;
 
 my $CMD = shift;
 my $ADPROTO = '0.7';
@@ -53,7 +53,7 @@ if (-r $CFGFILE) {
 	print "ADPERR: Invalid config $CFGFILE: $@\n";
 	exit;
     }
-    if($ASSUME_YES) {
+    if($ASSUMEYES) {
 	$YES_OPT = "-y"; # better use -y than --assumeyes since older centos/redhat 
 			 # version do not know about --assumeyes but do now -y
     }
