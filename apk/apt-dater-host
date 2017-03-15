@@ -10,7 +10,7 @@
 #   Henrik Riomar <henrik.riomar@gmail.com>
 #
 # Copyright Holder:
-#   2016 (C) Henrik Riomar
+#   2016,2017 (C) Henrik Riomar
 #
 # License:
 #   This program is free software; you can redistribute it and/or modify
@@ -210,6 +210,10 @@ case "$1" in
 	kernel)
 		say_hi
 		get_kern
+		;;
+
+	source-only)
+		# do nothing (used for unit testing)
 		;;
 
 	*)
