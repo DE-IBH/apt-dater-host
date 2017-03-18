@@ -6,4 +6,4 @@
 #Defaults	env_keep += http_proxy
 
 # Allow members of group adm to execute the apk command
-%adm		ALL=NOPASSWD: /sbin/apk
+#%adm		ALL=NOPASSWD: /sbin/apk

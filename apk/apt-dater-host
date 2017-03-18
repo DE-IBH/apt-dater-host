@@ -31,6 +31,7 @@
 ADP_VERSION="0.6"
 ROOT_CMD="sudo"
 APK_CMD="/sbin/apk"
+VIRT_WHAT_CMD="/usr/sbin/virt-what --test-root=/"
 
 err=255 # exit code returned by Perl from die()
 
@@ -97,7 +98,13 @@ get_virt()
 	if [ -n "$virt" ]; then
 		echo "VIRT: $virt"
 	else
-		echo "VIRT: Unknown"
+		virt=$($VIRT_WHAT_CMD 2> /dev/null)
+		ret=$?
+		if [ -z "$virt" ]; then
+			[ $ret -eq 0 ] && echo "VIRT: Physical" || echo "VIRT: Unknown"
+		else
+			echo "VIRT: $(echo $virt | awk '{print $1}')"
+		fi
 	fi
 }
 
