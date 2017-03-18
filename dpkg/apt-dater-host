@@ -320,7 +320,7 @@ sub do_upgrade() {
 
     # drop -y if any packages would be removed
     if($ASSUMEYES) {
-	unless(open(HAPT, "$UpgradeCmd --simulate |")) {
+	unless(open(HAPT, "$UpgradeCmd --simulate --assume-yes |")) {
 	    print "\nADPERR: Failed to execute '$UpgradeCmd --simulate' ($!).\n";
 	    exit(1);
 	}
