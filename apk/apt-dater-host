@@ -10,7 +10,7 @@
 #   Henrik Riomar <henrik.riomar@gmail.com>
 #
 # Copyright Holder:
-#   2016,2017 (C) Henrik Riomar
+#   2016, 2017 (C) Henrik Riomar
 #
 # License:
 #   This program is free software; you can redistribute it and/or modify
@@ -71,7 +71,7 @@ get_pkg_stat()
 	$APK_CMD info | while read -r pkg
 	do
 		line=$(grep -E "^${pkg}-[0-9]" $tmp)
-		new_ver=$(echo $line | awk '{print $NF}')
+		new_ver=$(echo $line | sed 's/ @.\+$//' | awk '{print $NF}')
 		cur_ver=$(echo $line | awk '{print $1}' | sed "s/$pkg-//")
 		if [ x"$new_ver" = x"$cur_ver" ]; then
 			echo "STATUS: $pkg|$cur_ver|i"
