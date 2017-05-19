@@ -52,7 +52,7 @@ get_prl()
 # check if a pkg is held back
 is_held()
 {
-	grep -E -q ^$1\= /etc/apk/world
+	grep -E -q -e ^$1\= -e ^$1\< /etc/apk/world
 }
 
 # check if $1 > $2
