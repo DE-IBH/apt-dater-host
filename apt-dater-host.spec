@@ -1,11 +1,11 @@
 Name:           apt-dater-host
-Version:        1.0.0
+Version:        1.0.1
 Release:        1%{?dist}
 BuildArch:      noarch
 Summary:        Host helper application for apt-dater
 
 License:        GPL2
-URL:            http://www.ibh.de/apt-dater/
+URL:            https://github.com/DE-IBH/apt-dater-host/
 Source0:        https://github.com/DE-IBH/apt-dater-host/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
 
 %description
