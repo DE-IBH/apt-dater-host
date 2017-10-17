@@ -12,7 +12,7 @@ Setup hosts managed by apt-dater:
   Modify the sudoers rules, e.g. `/etc/sudoers` or `/etc/sudoers.d/apt-dater-host`:
 
 	Defaults env_reset,env_keep=MAINTAINER
-	the-user ALL=NOPASSWD: /usr/bin/apt-get, /usr/bin/aptitude
+	the-user ALL=NOPASSWD: /usr/bin/apt-get, /usr/bin/aptitude, /usr/sbin/needrestart
 
   For non apt-based distributions you need to replace
   `/usr/bin/apt-get, /usr/bin/aptitude` with the equivalent, e.g. `/usr/bin/yum`.
