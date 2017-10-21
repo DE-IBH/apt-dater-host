@@ -1,0 +1,36 @@
+#!/usr/bin/env bats
+
+source ./apt-dater-host source-only
+
+check_tag()
+{
+	TAG=$1
+	STR=$2
+	[ $(echo $STR | grep -E -v -c "^$TAG:") -eq 0 ]
+}
+
+@test "say_hi()" {
+	result="$(say_hi)"
+	check_tag ADPROTO $result
+	[ "$result" = "ADPROTO: 0.6" ]
+}
+
+@test "get_lsbrel()" {
+	result="$(get_lsbrel)"
+	check_tag LSBREL $result
+}
+
+@test "get_pkg_stat()" {
+	result="$(get_pkg_stat)"
+	check_tag STATUS $result
+}
+
+@test "get_virt()" {
+	result="$(get_virt)"
+	check_tag VIRT $result
+}
+
+@test "get_kern()" {
+	result="$(get_kern)"
+	check_tag KERNELINFO $result
+}

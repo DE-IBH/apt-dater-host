@@ -10,7 +10,7 @@
 #   Henrik Riomar <henrik.riomar@gmail.com>
 #
 # Copyright Holder:
-#   2016 (C) Henrik Riomar
+#   2016, 2017 (C) Henrik Riomar
 #
 # License:
 #   This program is free software; you can redistribute it and/or modify
@@ -52,7 +52,7 @@ get_prl()
 # check if a pkg is held back
 is_held()
 {
-	grep -E -q ^$1\= /etc/apk/world
+	grep -E -q -e ^$1\= -e ^$1\< /etc/apk/world
 }
 
 # check if $1 > $2
@@ -71,7 +71,7 @@ get_pkg_stat()
 	$APK_CMD info | while read -r pkg
 	do
 		line=$(grep -E "^${pkg}-[0-9]" $tmp)
-		new_ver=$(echo $line | awk '{print $NF}')
+		new_ver=$(echo $line | sed 's/ @.\+$//' | awk '{print $NF}')
 		cur_ver=$(echo $line | awk '{print $1}' | sed "s/$pkg-//")
 		if [ x"$new_ver" = x"$cur_ver" ]; then
 			echo "STATUS: $pkg|$cur_ver|i"
@@ -210,6 +210,10 @@ case "$1" in
 	kernel)
 		say_hi
 		get_kern
+		;;
+
+	source-only)
+		# do nothing (used for unit testing)
 		;;
 
 	*)

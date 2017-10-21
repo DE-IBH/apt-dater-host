@@ -1,5 +1,8 @@
 clean:
 
+check:
+	./test-apt-dater-host
+
 install:
 	install -D -m0755 apt-dater-host \
 		$(DESTDIR)/usr/bin/apt-dater-host
