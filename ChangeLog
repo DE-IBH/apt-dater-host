@@ -1,3 +1,20 @@
+apt-dater-host (1.0.1-adp0.7) unstable; urgency=low
+
+  * Features:
+    - Add support for Alpine Linux.
+      (Contributed by Henrik Riomar @HRio)
+    - Add RPM spec file.
+      (Pull Request #15 by Mike Gerber @neingeist)
+  * Changes/Fixes:
+    - Fix aptitude on Jessie support.
+      (Pull Request #18 by @drousseau)
+    - Add ASSUME_YES support for yum.
+      (Pull Request #14 by @megabert)
+    - Move README to Markdown.
+      (Pull Request #20 by Lukas Kallies @kallies)
+
+ -- Thomas Liske <liske@ibh.de>  Tue, 09 Jan 2018 22:00:49 +0100
+
 apt-dater-host (1.0.0-adp0.7) unstable; urgency=low
 
   * Detect new Debian distro kernels correctly.
