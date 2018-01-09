@@ -1,0 +1,9 @@
+# apt-dater-host sudoers.d config file
+# ------------------------------------
+#
+
+# Keep http_proxy environment variable
+#Defaults	env_keep += http_proxy
+
+# Allow members of group adm to execute the apk command
+#%adm		ALL=NOPASSWD: /sbin/apk
