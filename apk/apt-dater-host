@@ -169,7 +169,7 @@ run_as_root()
 	shift
 
 	proxy="/etc/profile.d/proxy.sh"
-	[ -r $proxy ] && source $proxy
+	[ -r $proxy ] && . $proxy
 
 	cmd="$ROOT_CMD $*"
 	$cmd
