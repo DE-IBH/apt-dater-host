@@ -9,6 +9,16 @@ check_tag()
 	[ $(echo $STR | grep -E -v -c "^$TAG:") -eq 0 ]
 }
 
+test_get_virt()
+{
+	local TYPE=$1
+	local testdir="./testdata/get_virt"
+	export VIRT_WHAT_CMD="cat $testdir/$TYPE"
+	export DMESG_CMD="echo"
+	result="$(get_virt)"
+	[ "$result" = "VIRT: $TYPE" ]
+}
+
 @test "say_hi()" {
 	result="$(say_hi)"
 	check_tag ADPROTO $result
@@ -28,6 +38,22 @@ check_tag()
 @test "get_virt()" {
 	result="$(get_virt)"
 	check_tag VIRT $result
+}
+
+@test "get_virt() Physical" {
+	test_get_virt "Physical"
+}
+
+@test "get_virt() kvm" {
+	test_get_virt "kvm"
+}
+
+@test "get_virt() xen-dom0" {
+	test_get_virt "xen-dom0"
+}
+
+@test "get_virt() xen-domU" {
+	test_get_virt "xen-domU"
 }
 
 @test "get_kern()" {
