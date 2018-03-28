@@ -198,7 +198,6 @@ sub do_status() {
     my %updates;
     my %security_updates;
     my %holds;
-    my $pos = 0;
     my $DPKGARGS;
 
     if($DPKGTOOL eq "apt-get") {
@@ -213,53 +212,95 @@ sub do_status() {
 	$DPKGARGS = "--quiet --simulate --fix-broken --allow-unauthenticated";
     }
 
-    unless(open(HAPT, "$DPKGTOOL $DPKGARGS dist-upgrade |")) {
-	print "\nADPERR: Failed to execute '$DPKGTOOL $DPKGARGS dist-upgrade' ($!).\n";
-	exit(1);
-    }
-    while(<HAPT>) {
-	chomp;
-	
-	if($pos == 0) {
-	    $pos=1 if (/^The following packages have been kept back/);
-	    $pos=2 if (/^The following packages will be upgraded:/);
-	    next;
+    # "anonymous" subroutine
+    my $get_updates = sub {
+	# the following variables need to be in scope when entering this
+	# subroutine:
+	#
+	# $DPKGTOOL         - either "aptitude" or "apt-get"
+        # $DPKGARGS         - arguments for "aptitude" or "apt-get"
+        # %holds            - empty hash containing packages that are on hold
+        # %updates          - empty hash containing packages that will get updated
+        # %security_updates - empty hash containing packages that will get a security update
+        # %lsb              - hash containing LSB info
+	#
+	my $kind_of_update = $_[0]; # either "update" or "security"
+       
+        my $pos = 0;
+
+	if($kind_of_update eq "security") {
+            if(    $lsb{'Distributor ID'} eq "Debian") {
+                $DPKGARGS .= ' -t "l=Debian-Security"';
+	    }
+            elsif( $lsb{'Distributor ID'} eq "Ubuntu") {
+		    # f.ex. '-t "s=trusty-security"'
+                $DPKGARGS .= ' -t "s='.$lsb{'Codename'}.'-security"';
+	    }
+	    else {
+    	        print "\nADPERR: Getting the status of security updates on '".
+		      $lsb{'Distributor ID'}.
+		      "' is not implemented\n";
+    	        exit(1);
+	    }
 	}
 
-	if($pos == 1) {
-	    unless (/^\s/) {
-		$pos++;
-		next;
-	    }
-	    while(/^\s*(\S+)(\s(.+))?$/) {
-		$holds{$1} = 1;
-		if(defined($2)) {
-		    $_ = $2;
+        unless(open(HAPT, "$DPKGTOOL $DPKGARGS dist-upgrade |")) {
+    	    print "\nADPERR: Failed to execute '$DPKGTOOL $DPKGARGS dist-upgrade' ($!).\n";
+    	    exit(1);
+        }
+        while(<HAPT>) {
+            chomp;
+            
+            if($pos == 0) {
+                $pos=1 if (/^The following packages have been kept back/);
+                $pos=2 if (/^The following packages will be upgraded:/);
+                next;
+            }
+    
+            if($pos == 1) {
+                unless (/^\s/) {
+                    $pos++;
+                    next;
+                }
+                while(/^\s*(\S+)(\s(.+))?$/) {
+                    $holds{$1} = 1;
+                    if(defined($2)) {
+                        $_ = $2;
+                    }
+                    else {
+                        $_ = '';
+                    }
+                }
+    	    }
+    
+    	    # an "Inst" line has a form like this:
+    	    #
+    	    #    Inst qgis-common [1:2.18.16+24xenial-ubuntugis] (1:3.0.0+24xenial-ubuntugis QGIS repository:xenial [all]) []
+    	    #
+    	    if (/^Inst (\S+) \[.+\] \((\S+) ([^:]+\S+)/) {
+    	        my $pkg = $1;
+	        if($kind_of_update   eq "update") {
+    	            $security_updates{$pkg} = $2;
 		}
 		else {
-		    $_ = '';
+    	            $updates{$pkg} = $2;
 		}
-	    }
-	}
+    	    }
+        }
+        close(HAPT);
 
-	# an "Inst" line has a form like this:
-	#
-	#    Inst qgis-common [1:2.18.16+24xenial-ubuntugis] (1:3.0.0+24xenial-ubuntugis QGIS repository:xenial [all]) []
-	#
-	if (/^Inst (\S+) \[.+\] \((\S+) ([^:]+\S+)/) {
-	    my $pkg = $1;
-	    $updates{$pkg} = $2;
-	    # check for security upgrade based on
-	    # https://github.com/monitoring-plugins/monitoring-plugins/blob/master/plugins/check_apt.c#L57
-	    #
-	    $security_updates{$pkg} = ($3 =~ /Debian-Security:|Ubuntu:[^\/]*\/[^-]*-security/) ? 1 : 0;
-	}
-    }
-    close(HAPT);
-    if($?) {
-	print "\nADPERR: Error executing '$DPKGTOOL $DPKGARGS dist-upgrade' ($?).\n";
-	exit(1);
-    }
+        if($?) {
+            print "\nADPERR: Error executing '$DPKGTOOL $DPKGARGS dist-upgrade' ($?).\n";
+            exit(1);
+        }
+
+    }; # end of get_updates()
+
+    $get_updates->( "update"   );
+    $get_updates->( "security" ) if $DPKGTOOL eq "apt-get";
+    # only apt-get is currently able to return the list of security updates
+    #   see https://bugs.debian.org/892983
+    #   and https://bugs.debian.org/892984
 
     # get version of installed packages
     my %installed;
@@ -284,7 +325,7 @@ sub do_status() {
 	    $status{$pkg} = 'h';
 	}
 	elsif($updates{$pkg}) {
-	    $status{$pkg} = $security_updates{$pkg} ? 'U' : 'u';
+	    $status{$pkg} = 'u';
 	}
 	else {
 	    $status{$pkg} = substr($3, 0, 1);
@@ -319,6 +360,9 @@ sub do_status() {
 	print "STATUS: $pkg|$installed{$pkg}|$status{$pkg}";
 	if (exists($updates{$pkg})) {
 	    print "=$updates{$pkg}" ;
+	}
+	if (exists($security_updates{$pkg})) {
+	    print "|s=$security_updates{$pkg}" ;
 	}
 	
 	print "\n";
