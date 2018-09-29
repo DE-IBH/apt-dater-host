@@ -1,0 +1,320 @@
+apt-dater protocol 0.8
+======================
+
+This file documents the protocol between apt-dater and the
+apt-dater-host command called via ssh on remote hosts. The protocol is
+designed to be a generic package management interface and cover most
+common GNU/Linux based package manager philosophies.
+
+
+Hosts managed by apt-dater musst have the apt-dater-host command in
+the search path.
+
+User interactive commands (see below) will be shown to the user
+unfiltered. Non-user interactive commands are parse by apt-dater.
+
+Non-user interactive sessions must start with the protocol version:
+
+    ADPROTO: ${ProtoVersion}
+
+The current protocol version is 0.8. Example:
+
+    ADPROTO: 0.8
+
+If apt-dater-host detects an error (i.e. from the package manager)
+during a non-interactive command it must add an error line containing
+an user readable error message:
+
+    ADPERR: ${Message}
+
+The message string should not be empty.
+
+
+Calling syntax
+==============
+
+An apt-dater-host script must accept the following command parameters:
+
+
+refresh
+-------
+
+Updates the package list (i.e. apt-get update) and retrieve status
+informations (see next command). This command is called none user
+interactive.
+
+If updating package list is not supported by the package manager the
+script must return the same output like calling 'status'.
+
+
+status
+------
+
+Prints status informations about installed distribution and packages.
+This command is non user interactive.
+
+There should be an LSB release line of the format:
+
+    LSBREL: ${Distri}|{Version}|${Codename}
+
+Example for Debian Etch:
+
+    LSBREL: Debian|4.0|etch
+
+
+There sould be PRL (Package Resource List) lines for the archive sources
+the packaging system is using:
+
+    PRL: ${URI}
+
+The PRL lines must be in a normalized form (no unnecessary
+spaces). There must be a PRL line for each archive source or no PRL
+lines at all.
+
+Example for Debian Squeezy:
+
+    PRL: http://ftp.de.debian.org/debian/ squeezy main
+    PRL: http://security.debian.org/ squeeze/updates main
+    PRL: deb http://www.debian-multimedia.org squeeze main
+
+
+A host might be part of one or more cluster (heartbeat,
+drbd, ...). Cluster nodes should not be updated
+simultanously. apt-dater will detect cluster nodes by identical
+CLUSTER lines and avoid updating nodes of the same cluster
+simultanously:
+
+    CLUSTER: ${Cluster-A}
+    CLUSTER: ${Cluster-B}
+
+The cluster might be any ASCII string and must be identical on all
+cluster nodes. A node can be part of multiple clusters.
+
+
+There sould be an VIRTualization line of the format:
+
+    VIRT: ${Name}
+
+This will only work if the remote host has the imvirt(1) script
+installed. Detected virtualizations:
+
+  Microsoft Corporation / Virtual Machine:
+    VIRT: Virtual Machine
+
+  VMware, Inc. / VMware Virtual Platform:
+    VIRT: VMware Virtual Platform
+
+  QEMU or KVM:
+    VIRT: QEMU
+
+  Xen:
+    VIRT: Xen
+
+  non detected:
+    VIRT: Physical
+
+  imvirt not installed:
+    VIRT: Unknown
+
+
+There sould be an UNAME line of the format:
+
+    UNAME: ${KERNEL-NAME}|${MACHINE}
+
+The values are taken from the uname command:
+
+    KERNEL-NAME: uname -s
+    MACHINE    : uname -m
+
+
+There must be a COMMANDS line of the format:
+
+    COMMANDS: ${commands}
+
+This is a bit-mask of supported apt-dater-host commands.  The commands
+are represented by the following bits:
+
+    0:  status
+    1:	refresh
+    2:	upgrade
+    4:	(un)install
+    8:  autoremove
+   16:  (un)hold
+
+These values are binary ORed. Default value is 7 if there is no
+COMMANDS line. The bits of a legacy FORBID line (ADP <0.8) are removed
+to support legacy versions.
+
+The apt-dater-host script on the client will refuse commands not
+marked as supported.
+
+
+There should be an UUID line:
+
+UUID: {$UUID}
+
+This is the DCE 1.1, ISO/IEC 11578:1996 and RFC 4122 compliant
+Universally Unique Identifier (UUID) of the host.  It should be a DCE
+version 1 (time and node based) UUID, generated at the installation
+time of the apt-dater-host client. This UUID is to be used to identify
+the installation by inventory tools or other 3rd party software.
+
+
+For each installed package there must be a status line:
+
+    STATUS: ${Package}|${InstVersion}|${Status}|${SecurityUpdateVersion}...
+
+    Supported Status values:
+	i		: installed
+	h		: hold back
+	u=${NewVersion}	: update available
+	x		: extra (no version found in any repository, this
+			  might be an obsoleted package)
+	b=${AddInfo}	: package is installed but broken
+			  (i.e. not configured)
+
+    Supported SecurityUpdateVersion values:
+	s=${NewVersion}	: security update available
+
+Example for an installed package:
+
+    STATUS: g++-4.1|4.1.1-21|i
+
+Example for an installed package with an update available:
+
+    STATUS: dnsutils|1:9.3.4-2etch1|u=1:9.3.4-2etch3
+
+Example for an installed package with both a regular update and a security
+update available, of which the versions differ:
+
+    STATUS: foo|1|u=2|s=1+deb9u1
+
+There should be a kernel info line (see also 'kernel' command).
+
+
+There should be NEEDRESTART line indicating the presence and the
+version of the needrestart(1) script:
+
+    NEEDRESTART-VER: ${Version}
+
+needrestart(1) is called in batch mode printing informations about
+services requiring restarts and outdated running kernels. The
+definition of the lines prefixed with 'NEEDRESTART-' are defined by
+the needrestart package. The following lines are currently known:
+
+    NEEDRESTART-KCUR: ${running kernel version}
+    NEEDRESTART-KEXP: ${expected kernel version}
+    NEEDRESTART-KSTA: ${kernel status}
+    NEEDRESTART-SVC: ${service}
+
+
+upgrade
+-------
+
+Install all available upgrades, this is user interactive.
+
+
+install [optional]
+------------------
+
+Install package(s) given as parameters to this command. This command
+is user interactive.
+
+
+uninstall [optional]
+--------------------
+
+Remove package(s) given as parameters to this command. This command
+is user interactive.
+
+
+kernel [optional]
+-----------------
+
+Retrieves informations about the running kernel. This command is non
+user interactive.
+
+The result line has the following format:
+
+    KERNELINFO: ${Code} ${Release}
+
+The following codes are supported:
+    0 - The running kernel is the latest distri kernel. No reboot
+	required.
+    1 - The running kernel is an distri kernel but it's older then the
+        latest installed. A reboot is recommended.
+    2 - No distri kernel is running.
+    9 - Unknown.
+
+The release field should be the output of `uname -r`.
+
+
+autoremove [optional]
+---------------------
+
+Removes package(s) that were automatically installed but are no longer
+required to statisfy dependencies. This command is user interactive.
+
+
+hold [optional]
+---------------
+
+Mark package(s) given as parameters to this command as 'hold'. The
+current status informations about installed distribution and packages
+are print after setting the package(s) on hold (like status). This
+command is non user interactive.
+
+
+unhold [optional]
+-----------------
+
+Mark package(s) given as parameters to this command no longer
+as 'hold'. The current status informations about installed
+distribution and packages are print after setting the package(s) on
+hold (like status). This command is non user interactive.
+
+
+
+
+Examples
+========
+
+The following lines show an example output of the 'status' command for
+a Debian Etch installation (the 'STATUS:' lines are truncated):
+
+ADPROTO: 0.3
+LSBREL: Debian|4.0|etch
+VIRT: Physical
+UNAME: Linux|i686
+STATUS: groff-base|1.18.1.1-12|i
+STATUS: libgnome2-0|2.16.0-2|i
+STATUS: m4|1.4.8-2|i
+STATUS: liblwres9|1:9.3.4-2etch1|u=1:9.3.4-2etch3
+STATUS: linux-image-2.6-686|2.6.24+13|h
+STATUS: apache2-mpm-prefork|2.2.3-4+etch4|i
+STATUS: iceweasel-l10n-de|2.0.0.3+debian-1etch1|i
+STATUS: mutt|1.5.17+20080114-1~bpo40+1|u=1.5.18-2~bpo40+1
+STATUS: libperl5.8|5.8.8-7etch3|i
+STATUS: autoconf|2.61-4|i
+KERNELINFO: 2 2.6.18-028stab053.5-openvz
+
+
+Another example for ADP 0.7 on Debian Jessie (the 'STATUS:' lines are
+truncated again):
+
+ADPROTO: 0.7
+LSBREL: Debian|testing|jessie
+VIRT: Physical
+UNAME: Linux|x86_64
+FORBID: 0
+UUID: 40a437f0-9f1e-11de-a398-001a4d577e31
+NEEDRESTART-VER: 1.1
+NEEDRESTART-KCUR: 3.16.1-tl1
+NEEDRESTART-KEXP: 3.16.1-tl1
+NEEDRESTART-KSTA: 1
+NEEDRESTART-SVC: apache2.service
+STATUS: libboost-filesystem1.55.0|1.55.0+dfsg-2|u=1.55.0+dfsg-3
+STATUS: libxine1-bin|1:1.1.21-dmo2|d
+STATUS: cups-filters-core-drivers|1.0.58-1|i
+STATUS: linux-headers-3.2.0-0.bpo.2-common|3.2.18-1~bpo60+1|x
+KERNELINFO: 2 3.16.1-tl1
