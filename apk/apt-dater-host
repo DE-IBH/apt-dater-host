@@ -10,7 +10,7 @@
 #   Henrik Riomar <henrik.riomar@gmail.com>
 #
 # Copyright Holder:
-#   2016-2018 (C) Henrik Riomar
+#   2016-2018, 2021 (C) Henrik Riomar
 #
 # License:
 #   This program is free software; you can redistribute it and/or modify
@@ -29,10 +29,13 @@
 #
 
 ADP_VERSION="0.6"
-ROOT_CMD="sudo"
+ROOT_CMD="doas"
 APK_CMD="/sbin/apk"
 VIRT_WHAT_CMD="/usr/sbin/virt-what --test-root=/"
 DMESG_CMD="dmesg"
+
+cfg="/etc/apt-dater-host.conf"
+[ -r $cfg ] && . $cfg
 
 err=255 # exit code returned by Perl from die()
 

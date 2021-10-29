@@ -1,0 +1,7 @@
+# apt-dater-host doas.d config file
+# ------------------------------------
+#
+
+# Keep http_proxy environment variable
+# Allow members of group adm to execute the apk command
+#permit nopass setenv { http_proxy } :adm cmd /sbin/apk
