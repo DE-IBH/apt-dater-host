@@ -60,3 +60,22 @@ test_get_virt()
 	result="$(get_kern)"
 	check_tag KERNELINFO $result
 }
+
+@test "check_forbid()" {
+	# check defaults
+	result="$(check_forbid)"
+	check_tag FORBID $result
+	[[ "$result" == "FORBID: 0" ]]
+
+	export FORBID_UPGRADE=1
+	result="$(check_forbid)"
+	[[ "$result" == "FORBID: 2" ]]
+
+	export FORBID_INSTALL=1
+	result="$(check_forbid)"
+	[[ "$result" == "FORBID: 6" ]]
+
+	export FORBID_REFRESH=1
+	result="$(check_forbid)"
+	[[ "$result" == "FORBID: 7" ]]
+}
