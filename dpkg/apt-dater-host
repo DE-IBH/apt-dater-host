@@ -376,7 +376,7 @@ sub do_kernel() {
     }
 
     my $reboot = 0;
-    unless(open(HDPKG, "dpkg-query -W -f='\${Version} \${Status;20} \${Maintainer} \${Provides}\n' 'linux-image*'|grep -E 'install ok installed (Debian|Ubuntu) Kernel Team'|grep linux-image|")) {
+    unless(open(HDPKG, "dpkg-query -W -f='\${Version} \${Status;20} \${Maintainer} \${Provides}\n' 'linux-image*'|grep -E 'install ok installed (Debian|Ubuntu|Canonical) Kernel Team'|grep linux-image|")) {
 	print "$infostr 9 $version\n";
 	return;
     }
