@@ -10,7 +10,7 @@
 #   Henrik Riomar <henrik.riomar@gmail.com>
 #
 # Copyright Holder:
-#   2016-2018 (C) Henrik Riomar
+#   2016-2018, 2021 (C) Henrik Riomar
 #
 # License:
 #   This program is free software; you can redistribute it and/or modify
@@ -29,10 +29,17 @@
 #
 
 ADP_VERSION="0.6"
-ROOT_CMD="sudo"
+ROOT_CMD="doas"
 APK_CMD="/sbin/apk"
 VIRT_WHAT_CMD="/usr/sbin/virt-what --test-root=/"
 DMESG_CMD="dmesg"
+
+FORBID_REFRESH=0
+FORBID_UPGRADE=0
+FORBID_INSTALL=0
+
+cfg="/etc/apt-dater-host.conf"
+[ -r $cfg ] && . $cfg
 
 err=255 # exit code returned by Perl from die()
 
@@ -141,7 +148,11 @@ get_kern()
 # FORBID: ${Operations}
 check_forbid()
 {
-	echo "FORBID: 0"
+	mask=0
+	[ $FORBID_REFRESH -eq 1 ] && mask=$((mask|=1))
+	[ $FORBID_UPGRADE -eq 1 ] && mask=$((mask|=2))
+	[ $FORBID_INSTALL -eq 1 ] && mask=$((mask|=4))
+	echo "FORBID: $mask"
 }
 
 #  ADPROTO: ${ProtoVersion}
@@ -180,6 +191,10 @@ run_as_root()
 	fi
 }
 
+echoerr()
+{
+	printf "\n%s\n\n" "$@" 1>&2
+}
 
 if [ -z "$1" ]; then
 	echo "Don't call this script directly!"
@@ -189,7 +204,11 @@ fi
 case "$1" in
 	refresh)
 		say_hi
-		run_as_root 0 $APK_CMD update
+		if [ $FORBID_REFRESH -eq 1 ]; then
+			echoerr "** Sorry, apt-dater based refreshs on this host are disabled! **"
+		else
+			run_as_root 0 $APK_CMD update
+		fi
 		do_status
 		;;
 
@@ -199,13 +218,21 @@ case "$1" in
 		;;
 
 	upgrade)
-		run_as_root 1 $APK_CMD upgrade
+		if [ $FORBID_UPGRADE -eq 1 ]; then
+			echoerr "** Sorry, apt-dater based upgrades on this host are disabled! **"
+		else
+			run_as_root 1 $APK_CMD upgrade
+		fi
 		;;
 
 	install)
 		shift
-		echo "Installing PKG: $*"
-		run_as_root 1 $APK_CMD add $*
+		if [ $FORBID_INSTALL -eq 1 ]; then
+			echoerr "** Sorry, apt-dater based installations on this host are disabled! **"
+		else
+			echo "Installing PKG: $*"
+			run_as_root 1 $APK_CMD add $*
+		fi
 		;;
 
 	kernel)
