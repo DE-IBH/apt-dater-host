@@ -145,6 +145,15 @@ get_kern()
 
 }
 
+# CLUSTER: ${Cluster-A}
+# CLUSTER: ${Cluster-B}
+get_clusters()
+{
+	if [ -n "$CLUSTERS" ]; then
+		printf 'CLUSTER: %s\n' $CLUSTERS
+	fi
+}
+
 # FORBID: ${Operations}
 check_forbid()
 {
@@ -168,6 +177,7 @@ do_status()
 	get_virt
 	get_uname
 	check_forbid
+	get_clusters
 	get_pkg_stat
 	get_kern
 }

@@ -79,3 +79,17 @@ test_get_virt()
 	result="$(check_forbid)"
 	[[ "$result" == "FORBID: 7" ]]
 }
+
+@test "get_clusters()" {
+	unset CLUSTERS
+	result="$(get_clusters)"
+	[[ "$result" == "" ]]
+
+	CLUSTERS="cluster-1"
+	result="$(get_clusters)"
+	check_tag CLUSTER $result
+	[[ "$result" == "CLUSTER: cluster-1" ]]
+
+	CLUSTERS="cluster-1 cluster-2"
+	[ $(get_clusters | wc -l) -eq 2 ]
+}
