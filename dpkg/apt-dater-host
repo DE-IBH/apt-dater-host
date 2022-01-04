@@ -34,8 +34,6 @@ use warnings;
 
 my $CFGFILE = '/etc/apt-dater-host.conf';
 my $DPKGTOOL = 'apt-get';
-my $APTUPGRADE = 'dist-upgrade';
-my $ASSUMEYES = 0;
 my $GETROOT = 'sudo';
 my $CLEANUP = 0;
 my $FORBID_REFRESH = 0;
@@ -119,7 +117,7 @@ else {
 
 
 sub do_refresh() {
-    if(system(($GETROOT ? $GETROOT : ()), $DPKGTOOL, 'update')) {
+    if(system(($GETROOT ? $GETROOT : ()), 'univention-upgrade', '--check')) {
 	print "\nADPERR: Failed to execute '$GETROOT $DPKGTOOL update' ($?).\n";
 	exit(1);
     }
@@ -314,30 +312,7 @@ sub do_status() {
 }
 
 sub do_upgrade() {
-    my $UpgradeCmd = "$DPKGTOOL ";
-    $UpgradeCmd .= '-o Aptitude::Delete-Unused=false ' if($DPKGTOOL eq 'aptitude');
-    $UpgradeCmd .= $APTUPGRADE;
-
-    # drop -y if any packages would be removed
-    if($ASSUMEYES) {
-	unless(open(HAPT, "$UpgradeCmd --simulate --assume-yes |")) {
-	    print "\nADPERR: Failed to execute '$UpgradeCmd --simulate' ($!).\n";
-	    exit(1);
-	}
-	while(<HAPT>) {
-	    chomp;
-	
-	    if(/^The following packages will be REMOVED:/) {
-		$ASSUMEYES = undef;
-		last;
-	    }
-	    last if(/^\d+ upgraded, \d+ newly installed/);
-	}
-	close(HAPT);
-
-	$UpgradeCmd .= ' --assume-yes' if($ASSUMEYES);
-    }
-
+    my $UpgradeCmd = "univention-upgrade"
     system("$GETROOT $UpgradeCmd");
 }
 
